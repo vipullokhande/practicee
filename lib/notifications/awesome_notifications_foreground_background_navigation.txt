@@ -1,0 +1,136 @@
+//For Awesome Notification
+
+create NotificationService :
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/material.dart';
+import 'package:practicee/notifications/utilities.dart';
+
+@pragma('vm:entry-point')
+Future<void> onActionNotificationMethod(ReceivedAction receivedAction) async {
+  print('Notification action received: ${receivedAction.buttonKeyPressed}');
+}
+
+@pragma('vm:entry-point')
+Future<void> onDismissMethod(ReceivedAction receivedAction) async {
+  await AwesomeNotifications().setGlobalBadgeCounter(0);
+}
+
+@pragma('vm:entry-point')
+Future<void> onNotificationCreatedMethod(
+    ReceivedNotification receivedNotification) async {
+  print('Notification created: ${receivedNotification.id}');
+}
+
+class NotificationService {
+  NotificationService._();
+  static final NotificationService instance = NotificationService._();
+  static initNotificationService() async {
+    await AwesomeNotifications().initialize(
+      null,
+      [
+        NotificationChannel(
+          channelGroupKey: 'basic_channel_group',
+          channelKey: 'basic_channel',
+          channelName: 'Basic notifications',
+          channelDescription: 'Notification channel for basic tests',
+          defaultColor: const Color(0xFF9D50DD),
+          importance: NotificationImportance.Max,
+          channelShowBadge: true,
+          ledColor: Colors.white,
+        )
+      ],
+    );
+    await AwesomeNotifications().setListeners(
+      onDismissActionReceivedMethod: onDismissMethod,
+      onNotificationCreatedMethod: onNotificationCreatedMethod,
+      onActionReceivedMethod: onActionNotificationMethod,
+    );
+  }
+
+  static Future<void> createProfilePageNotification() async {
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: createUniqueId(),
+        channelKey: 'basic_channel',
+        title: 'Profile',
+        body: 'Have a GOOD DAY',
+        bigPicture: 'assets/aventador.png',
+        notificationLayout: NotificationLayout.BigPicture,
+        payload: {
+          'route': '/profile',
+          'id': '123',
+        },
+      ),
+    );
+  }
+
+  static Future<void> createHomePageNotification() async {
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: createUniqueId(),
+        channelKey: 'basic_channel',
+        title: 'Home',
+        body: 'Have a GOOD DAY',
+        bigPicture: 'assets/aventador.png',
+        notificationLayout: NotificationLayout.BigPicture,
+        payload: {
+          'route': '/home',
+          'id': '123',
+        },
+      ),
+    );
+  }
+}
+
+above main.dart
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+in main.dart main()After WidgetFlutterBinding
+before run app
+await NotificationService.initNotificationService();
+  await AwesomeNotifications()
+      .getInitialNotificationAction(removeFromActionEvents: true);
+
+in runApp()
+runApp(
+    MyApp(
+      initialAction: initialAction,
+    ),
+  );
+
+in MyApp
+final ReceivedAction? initialAction;
+const MyApp({super.key, this.initialAction});
+
+in MyApp state and initstate
+@override
+  void initState() {
+    super.initState();
+    if (widget.initialAction != null) {
+      Future.delayed(Duration.zero, () {
+        _handleNavigation(widget.initialAction!);
+      });
+    }
+    AwesomeNotifications().setListeners(
+      onActionReceivedMethod: (action) async {
+        _handleNavigation(action);
+      },
+    );
+  }
+
+  void _handleNavigation(ReceivedAction action) {
+    final route = action.payload?['route'];
+
+    if (route != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamed(route);
+      });
+    }
+  }
+
+  in MaterialApp
+  navigatorKey: navigatorKey,
+          routes: {
+            '/profile': (context) => const Profile(),
+            '/home': (context) => const NotificationPage(),
+          },

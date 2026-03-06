@@ -1,0 +1,144 @@
+add pay
+
+add meta tag in manifest
+<meta-data
+    android:name="com.google.android.gms.wallet.api.enabled"
+    android:value="true" />
+
+add json file in assets
+1:-
+path - assets/google_pay_payment_profile.json
+{
+  "provider": "google_pay",
+  "data": {
+    "environment": "TEST",
+    "apiVersion": 2,
+    "apiVersionMinor": 0,
+    "allowedPaymentMethods": [
+      {
+        "type": "CARD",
+        "parameters": {
+          "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
+          "allowedCardNetworks": ["VISA", "MASTERCARD"]
+        },
+        "tokenizationSpecification": {
+          "type": "PAYMENT_GATEWAY",
+          "parameters": {
+            "gateway": "example",
+            "gatewayMerchantId": "exampleGatewayMerchantId"
+          }
+        }
+      }
+    ],
+    "merchantInfo": {
+      "merchantName": "Demo Merchant"
+    },
+    "transactionInfo": {
+      "totalPriceStatus": "FINAL",
+      "totalPrice": "1.00",
+      "currencyCode": "USD"
+    }
+  }
+}
+2:-
+path - assets/apple_pay_payment_profile.json
+{
+  "provider": "apple_pay",
+  "data": {
+    "merchantIdentifier": "merchant.com.example.demo",
+    "displayName": "Demo Merchant",
+    "merchantCapabilities": ["3DS", "debit", "credit"],
+    "supportedNetworks": ["visa", "masterCard", "amex"],
+    "countryCode": "US",
+    "currencyCode": "USD",
+    "requiredBillingContactFields": ["postalAddress"]
+  }
+}
+
+
+add this code
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:pay/pay.dart';
+
+class GoogleApplePayScreen extends StatelessWidget {
+  GoogleApplePayScreen({super.key});
+
+  final Future<PaymentConfiguration> _googlePayConfigFuture =
+      PaymentConfiguration.fromAsset('google_pay_payment_profile.json');
+
+  final Future<PaymentConfiguration> _applePayConfigFuture =
+      PaymentConfiguration.fromAsset('apple_pay_payment_profile.json');
+
+  final List<PaymentItem> _paymentItems = const [
+    PaymentItem(
+      label: 'Total',
+      amount: '1.00',
+      status: PaymentItemStatus.final_price,
+    ),
+  ];
+
+  void _onPaymentResult(Map<String, dynamic> result) {
+    debugPrint(
+      'Payment result: ${result['paymentMethodData']['tokenizationData']['token']}',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = Platform.isAndroid || Platform.isIOS;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Unified Payments')),
+      body: Center(
+        child: isMobile
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// GOOGLE PAY
+                  if (Platform.isAndroid)
+                    FutureBuilder<PaymentConfiguration>(
+                      future: _googlePayConfigFuture,
+                      builder: (context, snapshot) {
+                        print(snapshot.data);
+                        if (!snapshot.hasData) {
+                          return const CircularProgressIndicator();
+                        }
+                        return GooglePayButton(
+                          paymentConfiguration: snapshot.data!,
+                          paymentItems: _paymentItems,
+                          type: GooglePayButtonType.pay,
+                          onPaymentResult: _onPaymentResult,
+                        );
+                      },
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  /// APPLE PAY
+                  if (Platform.isIOS)
+                    FutureBuilder<PaymentConfiguration>(
+                      future: _applePayConfigFuture,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const CircularProgressIndicator();
+                        }
+                        return ApplePayButton(
+                          paymentConfiguration: snapshot.data!,
+                          paymentItems: _paymentItems,
+                          type: ApplePayButtonType.buy,
+                          onPaymentResult: _onPaymentResult,
+                        );
+                      },
+                    ),
+                ],
+              )
+            : const Text(
+                'Google Pay / Apple Pay\n'
+                'works only on real mobile devices',
+                textAlign: TextAlign.center,
+              ),
+      ),
+    );
+  }
+}

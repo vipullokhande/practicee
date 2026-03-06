@@ -1,0 +1,78 @@
+add flutter_stripe , http to pubspec.yaml
+
+mainactivity.kt:FlutterFragmentActivity
+
+info.plist:
+<key>NSCameraUsageDescription</key>
+<string>Access camera</string>
+
+get keys from stripe dashboard:
+
+initialize striper in main.dart after widgetsflutterbinding:
+Stripe.publishableKey =
+      "pk_test_51RdlogCelSyhQgxfL75c6qMXz3Hq4Bu2wdOnmMo77wgIjGbwH50VHBRpRSu1uGTKzR65fyOicyXzPs7xPygsLyBP00I5Yi4XqW";
+
+create service:
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class StripeService {
+  //Creating payment intent
+  Future<dynamic> createPaymentIntent(String amount, String currency) async {
+    try {
+      Map<String, dynamic> body = {
+        "amount": (int.parse(amount) * 100).toString(),
+        "currency": currency,
+        "payment_method_types[]": "card"
+      };
+      const String secret_key =
+          "sk_test_51RdlogCelSyhQgxfwbXHEgaaN3XYzQSo6tUXw9qFYhOOL9kym7CbHwMieO3QtbAbNPV9bpUUKpoefojEYGJpIZlP00qW0Z6899";
+      final response = await http.post(
+        Uri.parse("https://api.stripe.com/v1/payment_intents"),
+        headers: {
+          "Authorization": "Bearer $secret_key",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: body,
+      );
+      print(response.body);
+      return await jsonDecode(response.body);
+    } catch (e) {
+      print("Error ${e.toString()}");
+    }
+  }
+}
+
+in payment screen create function for initiating payment intent:
+Map<String, dynamic> paymentIntent = {};
+final StripeService _stripeService = StripeService();//service name
+
+Future<void> makePayment() async {
+    try {
+      paymentIntent = await _stripeService.createPaymentIntent("10", "USD");
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentIntent['client_secret'],
+          googlePay: const PaymentSheetGooglePay(
+            merchantCountryCode: "US",
+            testEnv: true,
+            currencyCode: "USD",
+          ),
+          merchantDisplayName: "Vipul Lokhande",
+        ),
+      );
+      await displayPaymentSheet();
+    } catch (e) {
+      print("Error from payscreen ${e.toString()}");
+    }
+  }
+
+  Future displayPaymentSheet() async {
+    try {
+      await Stripe.instance.presentPaymentSheet();
+    } catch (e) {
+      print("Error from sheet ${e.toString()}");
+    }
+  }
+
+call makePayment in UI:

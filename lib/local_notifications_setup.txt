@@ -1,0 +1,75 @@
+add flutter_local_notifications in pubspec.yaml
+
+in android/app/build.gradle 
+add in compileOptions{} block
+isCoreLibraryDesugaringEnabled = true
+OR
+coreLibraryDesugaringEnabled true
+
+add dependancies block at bottom if not added and and this line
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+add permission in android manifest file
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+crreate notifications service class
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  static Future<void> init() async {
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(settings: settings);
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestNotificationsPermission();
+  }
+
+  static Future<void> showOrderNotification({required String orderId}) async {
+    int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(
+      100000,
+    );
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'order_channel',
+          'Order Notifications',
+          channelDescription: 'Notification for order updates',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+
+    await _notifications.show(
+      id: notificationId,
+      title: 'Order #$orderId Placed 🛒',
+      body: 'Your order has been placed successfully!',
+      notificationDetails: NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      ),
+    );
+  }
+}
+
+and show in UI
