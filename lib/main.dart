@@ -14,6 +14,7 @@ import 'package:practicee/clean_architecture/presentation/bloc/counter_bloc/coun
 import 'package:practicee/example_app_data/screens/profile.dart';
 import 'package:practicee/firebase_options.dart';
 import 'package:practicee/notifications/screens/notification_page.dart';
+import 'package:practicee/notifications/services/get_server_key.dart';
 import 'package:practicee/notifications/services/notification_service.dart';
 import 'package:practicee/notifications/services/push_notification_request_permission_service.dart';
 import 'package:practicee/provider_example/providers/counter_provider.dart';
@@ -42,8 +43,12 @@ Future<void> main() async {
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await init();
-  // String token = await GetServerkey.getServerKeyToken();
-  // print("PUSH NOTIFICATION TOKEN $token");
+  try {
+    String token = await GetServerkey.getServerKeyToken();
+    print("PUSH NOTIFICATION TOKEN $token");
+  } on Exception catch (e) {
+    print("Push Notification Server Token Exception ${e.toString()}");
+  }
   //For Awesome Notification
   await NotificationService.initNotificationService();
   ReceivedAction? initialAction = await AwesomeNotifications()
