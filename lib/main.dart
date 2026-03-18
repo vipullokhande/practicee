@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
-import 'package:practicee/animations/packages/course_complete_animation.dart';
+import 'package:practicee/animations/explicit/sticky_profile_animation.dart';
 import 'package:practicee/clean_architecture/core/di.dart';
 import 'package:practicee/clean_architecture/presentation/bloc/counter_bloc/counter_bloc.dart';
 import 'package:practicee/example_app_data/screens/profile.dart';
@@ -210,7 +210,7 @@ class _MyAppState extends State<MyApp> {
               // PageStorage(
               //   bucket: pageStorageBucket,
               // child:
-              const CourseCompleteAnimation(),
+              const StickyProfileAnimation(),
           // ),
           // getPages: [],
           // ),
