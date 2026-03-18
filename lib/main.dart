@@ -3,16 +3,17 @@ import 'dart:async';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
-import 'package:practicee/animations/explicit/sticky_profile_animation.dart';
 import 'package:practicee/clean_architecture/core/di.dart';
 import 'package:practicee/clean_architecture/presentation/bloc/counter_bloc/counter_bloc.dart';
 import 'package:practicee/example_app_data/screens/profile.dart';
 import 'package:practicee/firebase_options.dart';
+import 'package:practicee/mixins/validator_screen.dart';
 import 'package:practicee/notifications/screens/notification_page.dart';
 import 'package:practicee/notifications/services/get_server_key.dart';
 import 'package:practicee/notifications/services/notification_service.dart';
@@ -40,7 +41,9 @@ Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
+  if (!kIsWeb) {
+    Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await init();
   try {
@@ -210,7 +213,7 @@ class _MyAppState extends State<MyApp> {
               // PageStorage(
               //   bucket: pageStorageBucket,
               // child:
-              const StickyProfileAnimation(),
+              const ValidatorScreen(),
           // ),
           // getPages: [],
           // ),
